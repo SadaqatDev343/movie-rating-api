@@ -76,7 +76,5 @@ export class UpdateUserDto {
   dob?: Date;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
   categories?: string[];
 }

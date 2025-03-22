@@ -1,24 +1,39 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS (optional, for frontend integration)
-  app.enableCors();
+  // Enable validation pipes
+  app.useGlobalPipes(new ValidationPipe());
 
-  // Swagger Configuration
+  // Set up Swagger
   const config = new DocumentBuilder()
     .setTitle('Movie Rating API')
-    .setDescription('API documentation for Movie Rating Api')
+    .setDescription('The Movie Rating API description')
     .setVersion('1.0')
+    .addTag('movies')
     .addTag('User')
-    .addBearerAuth() // For authorization
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth' // This name here is important for matching with @ApiBearerAuth() in your controller
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  // Enable CORS if needed
+  app.enableCors();
 
   await app.listen(3000);
   console.log(`Application is running on: http://localhost:3000/api`);

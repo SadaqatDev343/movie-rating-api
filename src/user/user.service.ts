@@ -10,12 +10,14 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './user.schema';
 import { CreateUserDto, LoginUserDto, UpdateUserDto } from './user.dto';
 import { JwtService } from '@nestjs/jwt';
+import { CloudinaryService } from './cloudinary.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private cloudinaryService: CloudinaryService
   ) {}
 
   async signUp(createUserDto: CreateUserDto): Promise<User> {
@@ -56,10 +58,20 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    // Update user profile
+    if (updateUserDto.image && user.image) {
+      try {
+        await this.cloudinaryService.deleteImage(user.image);
+      } catch (error) {
+        console.error('Failed to delete old image:', error);
+      }
+    }
+
     Object.assign(user, updateUserDto);
     await user.save();
 
-    return { message: 'Profile updated successfully', user };
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    return { message: 'Profile updated successfully', user: userResponse };
   }
 }
