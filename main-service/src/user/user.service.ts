@@ -41,6 +41,8 @@ export class UserService {
 
   async login(loginDto: LoginUserDto) {
     const { email, password } = loginDto;
+    console.log('user -----------', email, password);
+
     const user = await this.userModel.findOne({ email });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {

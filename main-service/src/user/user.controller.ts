@@ -23,8 +23,9 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from './cloudinary.service';
-import { MulterFile } from 'src/types/multer.types';
+
 import { User } from './user.schema';
+import { MulterFile } from 'src/types/multer.types';
 
 @ApiTags('User')
 @Controller('user')
