@@ -20,13 +20,13 @@ export class ServiceAService {
 
       if (!user || !user.categories || user.categories.length === 0) {
         console.log(
-          `User not found or has no favorite categories for ID: ${userId}`,
+          `User not found or has no favorite categories for ID: ${userId}`
         );
         return JSON.stringify([]);
       }
 
       const userCategoryIds = user.categories.map((cat) =>
-        typeof cat === 'string' ? cat : cat.toString(),
+        typeof cat === 'string' ? cat : cat.toString()
       );
 
       // Fetch categories and create a mapping of ID -> Name
@@ -68,7 +68,7 @@ export class ServiceAService {
 
       console.log(
         'Formatted Movie Data:',
-        JSON.stringify(formattedMovies, null, 2),
+        JSON.stringify(formattedMovies, null, 2)
       );
       return JSON.stringify(formattedMovies);
     } catch (error) {
