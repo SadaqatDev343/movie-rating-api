@@ -47,18 +47,38 @@ export class MoviesService {
     const movie = await this.movieModel.findById(movieId);
     if (!movie) throw new NotFoundException('Movie not found');
 
-    const existingRating = movie.ratings.find((r) => r.userId === dto.userId);
-    if (existingRating) {
-      existingRating.rating = dto.rating;
+    // Check if user has already rated this movie
+    const existingRatingIndex = movie.ratings.findIndex(
+      (r) => r.userId === dto.userId
+    );
+
+    if (existingRatingIndex !== -1) {
+      // Update existing rating
+      movie.ratings[existingRatingIndex].rating = dto.rating;
     } else {
+      // Add new rating
       movie.ratings.push({ userId: dto.userId, rating: dto.rating });
     }
 
-    const totalRatings = movie.ratings.length;
-    const sumRatings = movie.ratings.reduce((sum, r) => sum + r.rating, 0);
-    movie.averageRating = sumRatings / totalRatings;
+    // Recalculate average rating properly
+    if (movie.ratings.length > 0) {
+      // Calculate sum of all ratings
+      const sumRatings = movie.ratings.reduce((sum, r) => sum + r.rating, 0);
+      // Calculate average with proper precision
+      movie.averageRating = Number(
+        (sumRatings / movie.ratings.length).toFixed(1)
+      );
+    } else {
+      // Default value if no ratings
+      movie.averageRating = 0;
+    }
 
+    // Save the updated movie
     await movie.save();
-    return movie;
+
+    return {
+      title: movie.title,
+      averageRating: movie.averageRating,
+    };
   }
 }
