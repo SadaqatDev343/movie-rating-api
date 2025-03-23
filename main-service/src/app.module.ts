@@ -8,19 +8,10 @@ import { CloudinaryModule } from './user/cloudinary.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AppController } from './app.controller'; // Import your controller
 import { AppService } from './app.service'; // Import your service
+import { RecommendationModule } from './recommendation/recommendation.module';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: 'SERVICE_A',
-        transport: Transport.TCP,
-        options: {
-          host: 'localhost',
-          port: 3001,
-        },
-      },
-    ]),
     ConfigModule.forRoot(),
     MongooseModule.forRoot(
       process.env.MONGO_URI ||
@@ -30,6 +21,7 @@ import { AppService } from './app.service'; // Import your service
     CloudinaryModule,
     CategoryModule,
     MoviesModule,
+    RecommendationModule,
   ],
   controllers: [AppController], // Controllers should be outside the imports array
   providers: [AppService], // Providers should be outside the imports array

@@ -2,10 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(serviceA: string): any {
+  getHello(): any {
     return {
-      message: `Service A says: ${serviceA}`,
-      timestamp: new Date().toISOString(),
+      message: `hello from main-service`,
     };
   }
 }
