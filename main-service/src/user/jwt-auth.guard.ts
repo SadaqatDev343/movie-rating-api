@@ -1,27 +1,23 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from './user.schema';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
-export class JwtAuthGuard extends PassportStrategy(Strategy) {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
-    });
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
   }
 
-  async validate(payload: any) {
-    const user = await this.userModel.findById(payload.id);
+  handleRequest(err, user, info) {
+    console.log('Authenticated User:', user); // Debugging log
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    if (err || !user) {
+      console.error('Auth Error:', err || info); // Log error details
+      throw err || new UnauthorizedException('Unauthorized');
     }
-
     return user;
   }
 }

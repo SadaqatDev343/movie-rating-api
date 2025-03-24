@@ -1,9 +1,10 @@
-// category.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema()
-export class Category extends Document {
+export type CategoryDocument = Category & Document;
+
+@Schema({ timestamps: true }) // Adding timestamps to track creation and updates
+export class Category {
   @Prop({ required: true, unique: true })
   name: string;
 }

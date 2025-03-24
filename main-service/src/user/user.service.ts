@@ -20,6 +20,11 @@ export class UserService {
     private cloudinaryService: CloudinaryService
   ) {}
 
+  // ✅ FIXED: Implemented findById properly
+  async findById(userId: string): Promise<User | null> {
+    return this.userModel.findById(userId).exec();
+  }
+
   async signUp(createUserDto: CreateUserDto): Promise<User> {
     const { email, password } = createUserDto;
 
@@ -41,7 +46,6 @@ export class UserService {
 
   async login(loginDto: LoginUserDto) {
     const { email, password } = loginDto;
-    console.log('user -----------', email, password);
 
     const user = await this.userModel.findOne({ email });
 
@@ -49,7 +53,7 @@ export class UserService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const token = this.jwtService.sign({ id: user._id, email: user.email });
+    const token = this.jwtService.sign({ sub: user._id, email: user.email });
 
     return { message: 'Login successful', token };
   }
@@ -60,6 +64,7 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
+    // ✅ FIXED: Only delete image if it's being updated
     if (updateUserDto.image && user.image) {
       try {
         await this.cloudinaryService.deleteImage(user.image);
@@ -72,8 +77,21 @@ export class UserService {
     await user.save();
 
     const userResponse = user.toObject();
-    delete userResponse.password;
+    delete userResponse.password; // Remove sensitive data
 
     return { message: 'Profile updated successfully', user: userResponse };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userModel.findById(userId).populate('categories');
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const userResponse = user.toObject();
+    delete userResponse.password; // Remove sensitive data
+
+    return { user: userResponse };
   }
 }

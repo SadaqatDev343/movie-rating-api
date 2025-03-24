@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Post,
   Put,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -26,6 +28,7 @@ import { CloudinaryService } from './cloudinary.service';
 
 import { User } from './user.schema';
 import { MulterFile } from 'src/types/multer.types';
+import { JwtStrategy } from './JwtStrategy';
 
 @ApiTags('User')
 @Controller('user')
@@ -149,5 +152,16 @@ export class UserController {
     }
 
     return this.userService.updateProfile(user.id, updateUserDto);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('whoami')
+  async getProfile(@GetUser() user: any) {
+    console.log('User in getProfile:', user); // Debugging log
+
+    if (!user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    return this.userService.getProfile(user._id.toString());
   }
 }

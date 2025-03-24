@@ -10,8 +10,11 @@ export class ServiceAService {
 
   async serviceA(userId: string): Promise<string> {
     try {
-      const connection = await mongoose.connect(this.mongoUri);
-      const db = connection.connection.db;
+      // Reuse existing connection if available
+      if (!mongoose.connection.readyState) {
+        await mongoose.connect(this.mongoUri);
+      }
+      const db = mongoose.connection.db;
 
       // Fetch user
       const user = await db
@@ -25,57 +28,40 @@ export class ServiceAService {
         return JSON.stringify([]);
       }
 
-      const userCategoryIds = user.categories.map((cat) =>
+      // Get user categories as strings (no conversion to ObjectId)
+      const userCategories = user.categories.map((cat) =>
         typeof cat === 'string' ? cat : cat.toString()
       );
+      console.log('User Categories:', userCategories);
 
-      // Fetch categories and create a mapping of ID -> Name
-      const categories = await db.collection('categories').find({}).toArray();
-      const categoryMap = categories.reduce((acc, cat) => {
-        acc[cat._id.toString()] = cat.name;
-        return acc;
-      }, {});
+      // Fetch all movies from the 'movies' collection and filter by user categories
+      const allMovies = await db.collection('movies').find({}).toArray();
 
-      console.log(`Category Mapping:`, categoryMap);
-
-      // Fetch movies
-      const movies = await db
-        .collection('movies')
-        .find({ categories: { $in: userCategoryIds } })
-        .toArray();
-
-      if (!movies || movies.length === 0) {
-        console.log('No movies found for user categories');
-        return JSON.stringify([]);
-      }
-
-      // Format movies data in the exact structure requested
-      const formattedMovies = movies.map((movie) => {
-        // Get primary category (first one or use the first found in the map)
-        const primaryCategory =
-          movie.categories && movie.categories.length > 0
-            ? categoryMap[movie.categories[0].toString()] || 'Unknown'
-            : 'Unknown';
-
-        return {
-          title: movie.title || '',
-          description: movie.description || '',
-          releaseYear: movie.releaseYear || 0,
-          categories: primaryCategory, // Using a single category string instead of comma-separated
-          averageRating: movie.averageRating || 5,
-        };
-      });
-
-      console.log(
-        'Formatted Movie Data:',
-        JSON.stringify(formattedMovies, null, 2)
+      // Filter movies that match user categories
+      const filteredMovies = allMovies.filter((movie) =>
+        movie.categories.some((cat) => userCategories.includes(cat.toString()))
       );
-      return JSON.stringify(formattedMovies);
+
+      // Log filtered movies data
+      console.log('Filtered Movies:');
+      console.log(JSON.stringify(filteredMovies, null, 2));
+
+      // Format the filtered movies to include specific details
+      const formattedMovies = filteredMovies.map((movie) => ({
+        title: movie.title || 'N/A',
+        description: movie.description || 'N/A',
+        releaseYear: movie.releaseYear || 'N/A',
+        averageRating: movie.averageRating || '0',
+        categories: movie.categories || 'N/A',
+      }));
+
+      console.log('Formatted Filtered Movie Data:');
+      console.log(JSON.stringify(formattedMovies, null, 2));
+
+      return JSON.stringify(formattedMovies); // Return formatted filtered movie data
     } catch (error) {
       console.error('Error fetching data:', error);
-      return JSON.stringify([]); // Return empty array on error
-    } finally {
-      await mongoose.disconnect();
+      return JSON.stringify([]);
     }
   }
 }

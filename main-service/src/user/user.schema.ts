@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Category } from 'src/category/category.schema';
 
 export type UserDocument = User & Document;
 
@@ -23,8 +24,11 @@ export class User {
   @Prop()
   dob?: Date;
 
-  @Prop({ type: [String], default: [] })
-  categories?: string[];
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Category' }],
+    default: [],
+  })
+  categories?: Category[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

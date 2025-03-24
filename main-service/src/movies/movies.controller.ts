@@ -9,7 +9,13 @@ export class MoviesController {
 
   @Post()
   async createMovie(@Body() dto: CreateMovieDto) {
+    console.log('Create Movie DTO: ', dto);
+
     return this.moviesService.createMovie(dto);
+  }
+  @Post('seed')
+  async seedMovies() {
+    return this.moviesService.seedMovies();
   }
 
   @Get()
