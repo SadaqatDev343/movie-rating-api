@@ -22,23 +22,23 @@ export class CategoryService {
     return this.categoryModel.findById(id);
   }
 
-  async seedCategories() {
-    const categories = [
-      'Action',
-      'Horror',
-      'Comedy',
-      'Animated',
-      'Drama',
-      'Sci-Fi',
-      'Thriller',
-      'Romance',
-      'Mystery',
-      'Fantasy',
-      'Adventure',
-      'Documentary',
-    ];
-    for (const name of categories) {
-      await this.categoryModel.updateOne({ name }, { name }, { upsert: true });
-    }
-  }
+  // async seedCategories() {
+  //   const categories = [
+  //     'Action',
+  //     'Horror',
+  //     'Comedy',
+  //     'Animated',
+  //     'Drama',
+  //     'Sci-Fi',
+  //     'Thriller',
+  //     'Romance',
+  //     'Mystery',
+  //     'Fantasy',
+  //     'Adventure',
+  //     'Documentary',
+  //   ];
+  //   for (const name of categories) {
+  //     await this.categoryModel.updateOne({ name }, { name }, { upsert: true });
+  //   }
+  // }
 }

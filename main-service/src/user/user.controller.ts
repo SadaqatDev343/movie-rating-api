@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Put,
   UnauthorizedException,
@@ -22,6 +23,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from './cloudinary.service';
@@ -111,11 +113,17 @@ export class UserController {
   async login(@Body() loginDto: LoginUserDto) {
     return this.userService.login(loginDto);
   }
-
-  @Put('profile')
+  // Alternative approach using path parameter
+  @Put('profile/:userId')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth') // This tells Swagger that this endpoint requires JWT Bearer token
-  @ApiOperation({ summary: 'Update user profile' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update user profile by ID' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    type: String,
+    description: 'ID of the user to update',
+  })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   @ApiResponse({
     status: 401,
@@ -131,7 +139,7 @@ export class UserController {
         name: { type: 'string' },
         address: { type: 'string' },
         dob: { type: 'string', format: 'date' },
-        categories: { type: 'array', items: { type: 'string' } },
+        categories: { type: 'string' },
         image: {
           type: 'string',
           format: 'binary',
@@ -139,11 +147,15 @@ export class UserController {
       },
     },
   })
-  async updateProfile(
-    @GetUser() user, // This decorator extracts user from JWT token
+  async updateProfileById(
+    @Param('userId') userId: string,
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file?: MulterFile
   ) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
     if (file) {
       try {
         const newImageUrl = await this.cloudinaryService.uploadImage(file);
@@ -153,9 +165,10 @@ export class UserController {
       }
     }
 
-    return this.userService.updateProfile(user.id, updateUserDto);
+    return this.userService.updateProfile(userId, updateUserDto);
   }
-  @UseGuards(JwtAuthGuard)
+
+  @ApiBearerAuth('JWT-auth')
   @Get('whoami')
   async getProfile(@GetUser() user: any) {
     console.log('User in getProfile:', user); // Debugging log
