@@ -9,17 +9,31 @@ export class ServiceAService {
   private readonly mongoUri = process.env.MONGO_URI;
 
   async serviceA(userId: string): Promise<string> {
-    try {
-      // Reuse existing connection if available
-      if (!mongoose.connection.readyState) {
-        await mongoose.connect(this.mongoUri);
-      }
-      const db = mongoose.connection.db;
+    let connection = null;
 
-      // Fetch user
-      const user = await db
-        .collection('users')
-        .findOne({ _id: new mongoose.Types.ObjectId(userId) });
+    try {
+      if (!userId || typeof userId !== 'string' || userId.length !== 24) {
+        console.log(`Invalid userId format: ${userId}`);
+        return JSON.stringify([]);
+      }
+
+      connection = await mongoose.connect(this.mongoUri);
+
+      if (!connection || !connection.connection || !connection.connection.db) {
+        throw new Error('Failed to establish database connection');
+      }
+
+      const db = connection.connection.db;
+
+      let user;
+      try {
+        user = await db
+          .collection('users')
+          .findOne({ _id: new mongoose.Types.ObjectId(userId) });
+      } catch (error) {
+        console.error(`Error finding user with ID: ${userId}`, error);
+        return JSON.stringify([]);
+      }
 
       if (!user || !user.categories || user.categories.length === 0) {
         console.log(
@@ -28,40 +42,64 @@ export class ServiceAService {
         return JSON.stringify([]);
       }
 
-      // Get user categories as strings (no conversion to ObjectId)
       const userCategories = user.categories.map((cat) =>
         typeof cat === 'string' ? cat : cat.toString()
       );
       console.log('User Categories:', userCategories);
 
-      // Fetch all movies from the 'movies' collection and filter by user categories
       const allMovies = await db.collection('movies').find({}).toArray();
 
-      // Filter movies that match user categories
-      const filteredMovies = allMovies.filter((movie) =>
-        movie.categories.some((cat) => userCategories.includes(cat.toString()))
-      );
+      const categories = await db.collection('categories').find({}).toArray();
+      const categoryMap = categories.reduce((acc, cat) => {
+        acc[cat._id.toString()] = cat.name;
+        return acc;
+      }, {});
 
-      // Log filtered movies data
-      console.log('Filtered Movies:');
-      console.log(JSON.stringify(filteredMovies, null, 2));
+      const result = [];
 
-      // Format the filtered movies to include specific details
-      const formattedMovies = filteredMovies.map((movie) => ({
-        title: movie.title || 'N/A',
-        description: movie.description || 'N/A',
-        releaseYear: movie.releaseYear || 'N/A',
-        averageRating: movie.averageRating || '0',
-        categories: movie.categories || 'N/A',
-      }));
+      for (const categoryId of userCategories) {
+        const moviesInCategory = allMovies.filter(
+          (movie) =>
+            movie.categories &&
+            Array.isArray(movie.categories) &&
+            movie.categories.some(
+              (cat) => cat && cat.toString && cat.toString() === categoryId
+            )
+        );
 
-      console.log('Formatted Filtered Movie Data:');
-      console.log(JSON.stringify(formattedMovies, null, 2));
+        moviesInCategory.sort(
+          (a, b) => (b.averageRating || 0) - (a.averageRating || 0)
+        );
 
-      return JSON.stringify(formattedMovies); // Return formatted filtered movie data
+        const topTwoMovies = moviesInCategory.slice(0, 2);
+
+        topTwoMovies.forEach((movie) => {
+          const categoryName = categoryMap[categoryId] || 'Unknown';
+          result.push({
+            title: movie.title || 'N/A',
+            description: movie.description || 'N/A',
+            releaseYear: movie.releaseYear || 'N/A',
+            averageRating: movie.averageRating || '0',
+            categories: categoryName,
+          });
+        });
+      }
+
+      console.log('Top 2 Movies Per Category:');
+      console.log(JSON.stringify(result, null, 2));
+
+      return JSON.stringify(result);
     } catch (error) {
       console.error('Error fetching data:', error);
       return JSON.stringify([]);
+    } finally {
+      if (connection) {
+        try {
+          await mongoose.disconnect();
+        } catch (error) {
+          console.error('Error disconnecting from MongoDB:', error);
+        }
+      }
     }
   }
 }
