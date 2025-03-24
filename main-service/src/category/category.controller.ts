@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './category.dto';
+import { Public } from 'src/decorators/public.decorator';
 
 @Controller('categories')
 export class CategoryController {
@@ -10,7 +11,7 @@ export class CategoryController {
   async createCategory(@Body() dto: CreateCategoryDto) {
     return this.categoryService.createCategory(dto);
   }
-
+  @Public()
   @Get()
   async getAllCategories() {
     return this.categoryService.getAllCategories();

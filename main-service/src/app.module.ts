@@ -1,3 +1,4 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
@@ -5,10 +6,13 @@ import { UserModule } from './user/user.module';
 import { CategoryModule } from './category/category.module';
 import { MoviesModule } from './movies/movies.module';
 import { CloudinaryModule } from './user/cloudinary.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AppController } from './app.controller'; // Import your controller
-import { AppService } from './app.service'; // Import your service
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { RecommendationModule } from './recommendation/recommendation.module';
+
+import { APP_GUARD } from '@nestjs/core'; // Import APP_GUARD to make the guard global
+import { JwtStrategy } from './user/JwtStrategy';
+import { JwtAuthGuard } from './user/jwt-auth.guard'; // Correct path to your guard
 
 @Module({
   imports: [
@@ -23,7 +27,14 @@ import { RecommendationModule } from './recommendation/recommendation.module';
     MoviesModule,
     RecommendationModule,
   ],
-  controllers: [AppController], // Controllers should be outside the imports array
-  providers: [AppService], // Providers should be outside the imports array
+  controllers: [AppController],
+  providers: [
+    AppService,
+    JwtStrategy, // Provide the JwtStrategy
+    {
+      provide: APP_GUARD, // Apply the JwtAuthGuard globally
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

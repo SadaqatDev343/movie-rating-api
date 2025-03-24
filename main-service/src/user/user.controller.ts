@@ -29,6 +29,7 @@ import { CloudinaryService } from './cloudinary.service';
 import { User } from './user.schema';
 import { MulterFile } from 'src/types/multer.types';
 import { JwtStrategy } from './JwtStrategy';
+import { Public } from 'src/decorators/public.decorator';
 
 @ApiTags('User')
 @Controller('user')
@@ -38,6 +39,7 @@ export class UserController {
     private readonly userService: UserService
   ) {}
 
+  @Public()
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully created.' })
@@ -85,7 +87,7 @@ export class UserController {
 
     return this.userService.signUp(createUserDto);
   }
-
+  @Public()
   @Post('login')
   @ApiOperation({ summary: 'Login user and get JWT token' })
   @ApiResponse({
